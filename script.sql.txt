@@ -1,0 +1,91 @@
+/* =========================================================
+   Script de Banco – ProdutosVendas
+   - Cria DB e tabela Products (se não existirem)
+   - Insere 3 registros de exemplo (se a tabela estiver vazia)
+   - Exemplos de SELECT / INSERT / UPDATE / DELETE
+   ========================================================= */
+
+-- 1) Criar o banco se não existir
+IF NOT EXISTS (SELECT 1 FROM sys.databases WHERE name = N'ProdutosVendasDb')
+BEGIN
+    PRINT 'Criando banco ProdutosVendasDb...';
+    CREATE DATABASE ProdutosVendasDb;
+END
+GO
+
+USE ProdutosVendasDb;
+GO
+
+-- 2) Criar tabela dbo.Products se não existir
+IF OBJECT_ID(N'dbo.Products', N'U') IS NULL
+BEGIN
+    PRINT 'Criando tabela dbo.Products...';
+    CREATE TABLE dbo.Products
+    (
+        Id             INT IDENTITY(1,1) PRIMARY KEY,
+        [Name]         NVARCHAR(120) NOT NULL,
+        Barcode        NVARCHAR(50)  NULL,
+        UnitPrice      DECIMAL(18,2) NOT NULL CONSTRAINT DF_Product_UnitPrice DEFAULT(0),
+        StockQuantity  INT           NOT NULL CONSTRAINT DF_Product_Stock DEFAULT(0),
+        ExpirationDate DATE          NULL
+    );
+
+    -- Índice único no código de barras (permitindo NULL)
+    CREATE UNIQUE INDEX UX_Products_Barcode
+        ON dbo.Products(Barcode)
+        WHERE Barcode IS NOT NULL;
+END
+ELSE
+BEGIN
+    PRINT 'Tabela dbo.Products já existe.';
+END
+GO
+
+-- 3) Inserir 3 registros de exemplo somente se a tabela estiver vazia
+IF NOT EXISTS (SELECT 1 FROM dbo.Products)
+BEGIN
+    PRINT 'Inserindo registros de exemplo...';
+    INSERT INTO dbo.Products ([Name], Barcode, UnitPrice, StockQuantity, ExpirationDate)
+    VALUES
+        (N'Refrigerante Lata 350ml', N'7891000100101',  4.99, 120, '2026-12-31'),
+        (N'Chocolate 90g',           N'7891000200202',  6.50,  80, '2026-06-30'),
+        (N'Arroz 5kg',               N'7891000300303', 24.90,  40, NULL);
+END
+ELSE
+BEGIN
+    PRINT 'Já existem registros em dbo.Products. Nenhum insert de exemplo será feito.';
+END
+GO
+
+-- 4) SELECT: listar todos os produtos (com ordenação)
+PRINT 'SELECT de todos os produtos:';
+SELECT Id, [Name], Barcode, UnitPrice, StockQuantity, ExpirationDate
+FROM dbo.Products
+ORDER BY [Name];
+GO
+
+-- 5) INSERT: adicionar um novo produto (exemplo)
+PRINT 'INSERT de exemplo:';
+INSERT INTO dbo.Products ([Name], Barcode, UnitPrice, StockQuantity, ExpirationDate)
+VALUES (N'Café 500g', N'7891000400404', 16.90, 50, NULL);
+GO
+
+-- 6) UPDATE: alterar o preço de um produto (ajuste o Id conforme necessário)
+PRINT 'UPDATE de exemplo (altera preço do Id = 1):';
+UPDATE dbo.Products
+   SET UnitPrice = 17.90
+ WHERE Id = 1;
+GO
+
+-- 7) DELETE: remover um produto (ajuste o Id conforme necessário)
+PRINT 'DELETE de exemplo (remove Id = 2):';
+DELETE FROM dbo.Products
+ WHERE Id = 2;
+GO
+
+-- 8) Conferência final
+PRINT 'Produtos após os comandos de exemplo:';
+SELECT Id, [Name], Barcode, UnitPrice, StockQuantity, ExpirationDate
+FROM dbo.Products
+ORDER BY [Name];
+GO
